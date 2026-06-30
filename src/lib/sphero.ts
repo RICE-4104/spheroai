@@ -65,8 +65,9 @@ export class SpheroError extends Error {
 
 function diagnoseBluetoothEnvironment(): SpheroError | null {
   if (typeof navigator === "undefined") return null;
-  if (!("bluetooth" in navigator)) {
-    const ua = navigator.userAgent || "";
+  const nav = navigator as Navigator;
+  if (!("bluetooth" in nav)) {
+    const ua = nav.userAgent || "";
     if (/Firefox|FxiOS/i.test(ua)) {
       return new SpheroError(
         "Firefox doesn't support Web Bluetooth.",
