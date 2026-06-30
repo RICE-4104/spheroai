@@ -65,8 +65,8 @@ export class SpheroError extends Error {
 
 function diagnoseBluetoothEnvironment(): SpheroError | null {
   if (typeof navigator === "undefined") return null;
-  const nav = navigator as Navigator;
-  if (!("bluetooth" in nav)) {
+  const nav = navigator as unknown as { bluetooth?: unknown; userAgent?: string };
+  if (!nav.bluetooth) {
     const ua = nav.userAgent || "";
     if (/Firefox|FxiOS/i.test(ua)) {
       return new SpheroError(
