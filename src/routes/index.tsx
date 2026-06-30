@@ -3,12 +3,13 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { Bluetooth, BluetoothConnected, Send, CircleDot } from "lucide-react";
+import { Send } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
+import { ConnectSphero } from "@/components/ConnectSphero";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
-import { connectSphero, getConnection, roll, setColor, spin, stop } from "@/lib/sphero";
+import { getConnection, roll, setColor, spin, stop } from "@/lib/sphero";
 
 export const Route = createFileRoute("/")({
   head: () => ({
