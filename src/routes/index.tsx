@@ -58,13 +58,24 @@ function Page() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
+  const inIframe = typeof window !== "undefined" && window.self !== window.top;
+
   const handleConnect = async () => {
     try {
+      if (!("bluetooth" in navigator)) {
+        throw new Error("Web Bluetooth is not supported in this browser. Use Chrome or Edge on desktop or Android.");
+      }
       await connectSphero();
       setConnected(true);
       toast.success("Sphero connected!");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      const msg = e instanceof Error ? e.message : String(e);
+      if (/permissions policy|disallowed|SecurityError/i.test(msg) && inIframe) {
+        toast.error("Bluetooth is blocked inside this preview frame. Opening the app in a new tab…");
+        window.open(window.location.href, "_blank", "noopener");
+        return;
+      }
+      toast.error(msg);
     }
   };
 
