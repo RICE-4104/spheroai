@@ -9,7 +9,7 @@ import { ConnectSphero } from "@/components/ConnectSphero";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
-import { getConnection, roll, setColor, spin, stop } from "@/lib/sphero";
+import { getConnection, setConnection, roll, setColor, spin, stop } from "@/lib/sphero";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -49,10 +49,14 @@ function Page() {
         addToolResult({ tool: toolCall.toolName, toolCallId: toolCall.toolCallId, output: "ok" });
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
+        console.error(`Tool ${toolCall.toolName} failed:`, e);
         addToolResult({ tool: toolCall.toolName, toolCallId: toolCall.toolCallId, output: `error: ${msg}` });
       }
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => {
+      console.error("Chat error:", err);
+      toast.error(err.message);
+    },
   });
 
   useEffect(() => {
@@ -67,6 +71,20 @@ function Page() {
     setInput("");
   };
 
+  const handleDisconnect = () => {
+    const conn = getConnection();
+    if (conn) {
+      conn.disconnect().then(() => {
+        setConnection(null);
+        setConnected(false);
+      }).catch(err => {
+        console.error("Disconnect error:", err);
+        setConnection(null);
+        setConnected(false);
+      });
+    }
+  };
+
   const busy = status === "streaming" || status === "submitted";
 
   return (
@@ -74,7 +92,11 @@ function Page() {
       <Toaster />
       <AppHeader />
       <div className="border-b border-border px-6 py-2 flex items-center justify-end">
-        <ConnectSphero connected={connected} onConnected={() => setConnected(true)} />
+        <ConnectSphero 
+          connected={connected} 
+          onConnected={() => setConnected(true)}
+          onDisconnected={handleDisconnect}
+        />
       </div>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6">
