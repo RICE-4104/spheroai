@@ -99,7 +99,7 @@ export async function connectSphero(): Promise<SpheroConnection> {
 
 async function write(packet: Uint8Array) {
   if (!conn) throw new Error("Sphero not connected");
-  await conn.api.writeValue(packet);
+  await conn.api.writeValue(packet.buffer as ArrayBuffer);
 }
 
 export async function wake() {
