@@ -54,22 +54,115 @@ export function getConnection() {
   return conn;
 }
 
-export async function connectSphero(): Promise<SpheroConnection> {
-  if (!("bluetooth" in navigator)) {
-    throw new Error("Web Bluetooth is not supported in this browser. Use Chrome or Edge on desktop/Android.");
+export class SpheroError extends Error {
+  hint: string;
+  constructor(message: string, hint: string) {
+    super(message);
+    this.hint = hint;
+    this.name = "SpheroError";
   }
-  const device = await navigator.bluetooth.requestDevice({
-    filters: [{ namePrefix: "SM-" }],
-    optionalServices: [SERVICE, ANTIDOS_SERVICE],
-  });
+}
 
-  const server = await device.gatt!.connect();
+function diagnoseBluetoothEnvironment(): SpheroError | null {
+  if (typeof navigator === "undefined") return null;
+  if (!("bluetooth" in navigator)) {
+    const ua = navigator.userAgent || "";
+    if (/Firefox|FxiOS/i.test(ua)) {
+      return new SpheroError(
+        "Firefox doesn't support Web Bluetooth.",
+        "Open this page in Chrome, Edge, or Brave on desktop, or Chrome on Android.",
+      );
+    }
+    if (/iPhone|iPad|iPod/i.test(ua)) {
+      return new SpheroError(
+        "iOS browsers don't support Web Bluetooth.",
+        "Use a desktop browser (Chrome/Edge) or Android Chrome. On iOS you'd need a native app.",
+      );
+    }
+    return new SpheroError(
+      "Web Bluetooth isn't available here.",
+      "Use Chrome, Edge, or Brave on desktop or Android. Make sure the page is loaded over HTTPS or localhost.",
+    );
+  }
+  if (typeof window !== "undefined" && window.self !== window.top) {
+    return new SpheroError(
+      "Bluetooth is blocked inside this preview frame.",
+      "Click 'Open in new tab' to launch the app standalone — browsers don't allow Bluetooth in embedded frames.",
+    );
+  }
+  if (typeof window !== "undefined" && window.isSecureContext === false) {
+    return new SpheroError(
+      "This page isn't a secure context.",
+      "Open the app over HTTPS (or http://localhost). Web Bluetooth refuses to run on plain HTTP.",
+    );
+  }
+  return null;
+}
 
-  // Anti-DOS unlock
-  const antiSvc = await server.getPrimaryService(ANTIDOS_SERVICE);
-  const antiChar = await antiSvc.getCharacteristic(ANTIDOS_CHAR);
-  const unlock = new TextEncoder().encode("usetheforce...band");
-  await antiChar.writeValue(unlock.buffer as ArrayBuffer);
+export async function connectSphero(): Promise<SpheroConnection> {
+  const envError = diagnoseBluetoothEnvironment();
+  if (envError) throw envError;
+
+  let device: BluetoothDevice;
+  try {
+    device = await navigator.bluetooth.requestDevice({
+      // Sphero Mini broadcasts as "SM-XXXX"; older Sphero / Sprk+ as "SK-" / "SB-".
+      filters: [
+        { namePrefix: "SM-" },
+        { namePrefix: "SK-" },
+        { namePrefix: "SB-" },
+        { services: [SERVICE] },
+      ],
+      optionalServices: [SERVICE, ANTIDOS_SERVICE],
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (/cancelled|User cancelled|chose not/i.test(msg)) {
+      throw new SpheroError(
+        "No Sphero picked.",
+        "Wake your Sphero by setting it on the charger or shaking it, then click Connect and pick it from the list.",
+      );
+    }
+    if (/permissions policy|disallowed|SecurityError/i.test(msg)) {
+      throw new SpheroError(
+        "The browser blocked the Bluetooth picker.",
+        "Open the app in its own tab (not inside an iframe) and try again. On Linux, install BlueZ ≥ 5.43.",
+      );
+    }
+    if (/globally disabled|Bluetooth adapter not available|adapter is off/i.test(msg)) {
+      throw new SpheroError(
+        "Your computer's Bluetooth is turned off.",
+        "Turn Bluetooth on in your OS settings, then click Connect again.",
+      );
+    }
+    throw new SpheroError(
+      "Couldn't open the Bluetooth picker.",
+      `Make sure Bluetooth is on and your Sphero is awake. Details: ${msg}`,
+    );
+  }
+
+  let server: BluetoothRemoteGATTServer;
+  try {
+    server = await device.gatt!.connect();
+  } catch (e) {
+    throw new SpheroError(
+      "Couldn't connect to the Sphero.",
+      "Move closer (within ~3 m), wake the robot (shake it or put it on the charger), then try again. If another device is connected to it, disconnect that first.",
+    );
+  }
+
+  try {
+    // Anti-DOS unlock
+    const antiSvc = await server.getPrimaryService(ANTIDOS_SERVICE);
+    const antiChar = await antiSvc.getCharacteristic(ANTIDOS_CHAR);
+    const unlock = new TextEncoder().encode("usetheforce...band");
+    await antiChar.writeValue(unlock.buffer as ArrayBuffer);
+  } catch (e) {
+    throw new SpheroError(
+      "Couldn't unlock the Sphero.",
+      "This usually means the device you picked isn't a Sphero Mini. Forget it from your OS Bluetooth settings and try again.",
+    );
+  }
 
   const svc = await server.getPrimaryService(SERVICE);
   const api = await svc.getCharacteristic(API_CHAR);
