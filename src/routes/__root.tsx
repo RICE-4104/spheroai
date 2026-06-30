@@ -77,14 +77,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "SpheroAI" },
+      { name: "description", content: "This is an AI that literally can hack into Sphero's infrastructure even though Sphero literally designed it to not be able to be hacked into. We did it in two m" },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "SpheroAI" },
+      { property: "og:description", content: "This is an AI that literally can hack into Sphero's infrastructure even though Sphero literally designed it to not be able to be hacked into. We did it in two m" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "SpheroAI" },
+      { name: "twitter:description", content: "This is an AI that literally can hack into Sphero's infrastructure even though Sphero literally designed it to not be able to be hacked into. We did it in two m" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/52a80223-947c-49d1-a3d7-28dada316d3e/id-preview-abd88987--63635401-972a-492e-bf89-77edbe556382.lovable.app-1782793748382.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/52a80223-947c-49d1-a3d7-28dada316d3e/id-preview-abd88987--63635401-972a-492e-bf89-77edbe556382.lovable.app-1782793748382.png" },
     ],
     links: [
       {
