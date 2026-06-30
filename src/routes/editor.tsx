@@ -278,7 +278,7 @@ function BlocklyPane({
     const { registerSpheroBlocks, SPHERO_TOOLBOX } = await import("@/lib/sphero-blocks");
     registerSpheroBlocks();
     const ws = Blockly.inject(ref.current, {
-      toolbox: SPHERO_TOOLBOX as unknown as Parameters<typeof Blockly.inject>[1]["toolbox"],
+      toolbox: SPHERO_TOOLBOX as never,
       theme: Blockly.Themes.Classic,
       grid: { spacing: 20, length: 1, colour: "#333", snap: true },
       trashcan: true,
