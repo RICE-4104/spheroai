@@ -69,7 +69,7 @@ export async function connectSphero(): Promise<SpheroConnection> {
   const antiSvc = await server.getPrimaryService(ANTIDOS_SERVICE);
   const antiChar = await antiSvc.getCharacteristic(ANTIDOS_CHAR);
   const unlock = new TextEncoder().encode("usetheforce...band");
-  await antiChar.writeValue(unlock);
+  await antiChar.writeValue(unlock.buffer as ArrayBuffer);
 
   const svc = await server.getPrimaryService(SERVICE);
   const api = await svc.getCharacteristic(API_CHAR);
