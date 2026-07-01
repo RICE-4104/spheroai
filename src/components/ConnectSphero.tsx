@@ -16,6 +16,7 @@ import { connectSphero, SpheroError } from "@/lib/sphero";
 type Props = {
   connected: boolean;
   onConnected: () => void;
+  onDisconnected?: () => void;
 };
 
 export function ConnectSphero({ connected, onConnected }: Props) {

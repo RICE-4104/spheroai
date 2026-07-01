@@ -54,6 +54,10 @@ export function getConnection() {
   return conn;
 }
 
+export function setConnection(c: SpheroConnection | null) {
+  conn = c;
+}
+
 export class SpheroError extends Error {
   hint: string;
   constructor(message: string, hint: string) {
