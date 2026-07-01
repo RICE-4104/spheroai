@@ -1,64 +1,61 @@
-// Electron entry for the Sphero AI desktop build.
-// Web Bluetooth is disabled by default in Electron; we have to handle
-// `select-bluetooth-device` explicitly or `navigator.bluetooth.requestDevice`
-// hangs forever.
+// SpheroAI — Electron desktop wrapper (Windows/macOS/Linux).
+// Loads the published Lovable app and adds the OS-level Bluetooth handlers
+// that browsers block. This is the same idea as Nativefier, but with a real
+// `select-bluetooth-device` handler so navigator.bluetooth actually works.
 
 const { app, BrowserWindow, session } = require("electron");
 const path = require("path");
 
+const APP_URL = process.env.SPHEROAI_URL || "https://sphero-talkie-bot.lovable.app";
+
 let mainWindow;
-let bluetoothCallback = null;
-const discoveredDevices = new Map();
 
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1100,
     height: 760,
     backgroundColor: "#0b0b0f",
+    title: "SpheroAI",
+    autoHideMenuBar: true,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      // Web Bluetooth requires this experimental flag on some Electron versions.
       enableBlinkFeatures: "WebBluetooth",
     },
   });
 
-  // The renderer asks for a device; we forward the list back to it via the IPC
-  // channel `bluetooth-pairing-request`, and the page picks one with
-  // `selectBluetoothDevice(deviceId)` from preload — or we simply auto-pick the
-  // first matching Sphero, which is what most users want.
+  // Auto-pick the first Sphero the OS discovers.
   mainWindow.webContents.on(
     "select-bluetooth-device",
     (event, deviceList, callback) => {
       event.preventDefault();
-      bluetoothCallback = callback;
-      for (const d of deviceList) discoveredDevices.set(d.deviceId, d);
-
-      const sphero = deviceList.find((d) => /^SM-|^SK-|^SB-/i.test(d.deviceName || ""));
-      if (sphero) {
-        bluetoothCallback = null;
-        callback(sphero.deviceId);
-      }
-      // Otherwise keep scanning; Chromium will fire this event again with more
-      // devices until the user cancels or one matches.
+      const sphero = deviceList.find((d) =>
+        /^SM-|^SK-|^SB-/i.test(d.deviceName || ""),
+      );
+      if (sphero) callback(sphero.deviceId);
+      // Otherwise let scanning continue; this handler fires again as more
+      // devices show up. If the user closes the picker we get an empty list.
     },
   );
 
-  // Auto-grant Bluetooth permission prompts.
+  // Grant Bluetooth permission automatically.
   session.defaultSession.setPermissionCheckHandler((_wc, permission) => {
-    if (permission === "bluetooth") return true;
-    return false;
+    return permission === "bluetooth";
   });
   session.defaultSession.setBluetoothPairingHandler((_details, callback) => {
-    // Sphero Mini doesn't require a PIN — just confirm.
     callback({ confirmed: true });
   });
 
-  const indexHtml = path.join(__dirname, "..", "dist", "client", "index.html");
-  mainWindow.loadFile(indexHtml).catch(() => {
-    // Fallback to dev server during local development.
-    mainWindow.loadURL("http://localhost:8080");
-  });
+  // Prefer the local production build if it exists (dist/client/index.html),
+  // otherwise load the hosted app. This lets us ship an offline-capable .exe
+  // when built with `bun run build`, and fall back to the live URL otherwise.
+  const localIndex = path.join(__dirname, "..", "dist", "client", "index.html");
+  const fs = require("fs");
+  if (fs.existsSync(localIndex)) {
+    mainWindow.loadFile(localIndex).catch(() => mainWindow.loadURL(APP_URL));
+  } else {
+    mainWindow.loadURL(APP_URL);
+  }
 }
 
 app.whenReady().then(createWindow);
