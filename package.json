@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "electron": "electron .",
-    "package:win": "electron-packager . SpheroAI --platform=win32 --arch=x64 --out=electron-release --overwrite --ignore=^/src --ignore=^/public --ignore=^/electron-release --ignore=^/\\."
+    "package:win": "electron-packager . SpheroAI --platform=win32 --arch=x64 --out=electron-release --overwrite --ignore=^/src --ignore=^/public --ignore=^/electron-release --ignore=^/\\.",
+    "package:nativefier": "nativefier --name SpheroAI --platform windows --arch x64 --icon ./build/icon.ico --internal-urls \".*lovable\\.app.*\" --browserwindow-options \"{\\\"webPreferences\\\":{\\\"enableBlinkFeatures\\\":\\\"WebBluetooth\\\"}}\" --inject ./electron/nativefier-inject.js https://sphero-talkie-bot.lovable.app ./electron-release"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.1",
