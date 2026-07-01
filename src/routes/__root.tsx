@@ -77,6 +77,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "color-scheme", content: "dark" },
+      { name: "theme-color", content: "#0b0b0f" },
       { title: "SpheroAI" },
       { name: "description", content: "This is an AI that literally can hack into Sphero's infrastructure even though Sphero literally designed it to not be able to be hacked into. We did it in two m" },
       { name: "author", content: "Lovable" },
